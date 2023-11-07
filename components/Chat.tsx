@@ -1,50 +1,83 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { StyleSheet, Text, View, Platform, KeyboardAvoidingView, Image } from 'react-native';
-import { RouteProp } from '@react-navigation/native';
 import { GiftedChat, IMessage, Bubble, BubbleProps } from "react-native-gifted-chat";
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { collection, query, orderBy, onSnapshot, addDoc, Timestamp, Firestore } from 'firebase/firestore';
 import { RootStackParamList } from './Start';
+import { FirestoreContext } from "../contexts/FirestoreContext";
 
-type ChatScreenRouteProp = RouteProp<RootStackParamList, 'Chat'>;
-
-type Props = {
-  route: ChatScreenRouteProp;
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'Chat'>;
 
 const Chat: React.FC<Props> = ({ route }) => {
-   const {bgColor} = route.params;
-   const {userName} = route.params
+   const {userID, bgColor, userName} = route.params;
 
    const [messages, setMessages] = useState<IMessage[]>([]);
 
+   const db = useContext(FirestoreContext);
+
    useEffect(() => {
-      setMessages([
-         {
-            _id: 1,
-            text: 'Hello Developer!',
-            createdAt: new Date(),
-            user: {
-               _id: 2,
-               name: "System",
-               avatar: "https://dummyimage.com/200x200/a2d2ff/0d1321.png&text=System",
-            },
-            system: true,
-         },
-         {
-            _id: 3,
-            text: "Hello developer",
-            createdAt: new Date(),
-            user: {
-            _id: 4,
-            name: "React Native",
-            avatar: "https://reactnative.dev/img/tiny_logo.png",
-            },
-         },
-      ]);
-   }, []);
+      if (db) {
+        // Create a query against the messages collection, ordering by createdAt
+        const messagesQuery = query(collection(db, "messages"), orderBy("createdAt", "desc"));
+    
+        // Listen for query snapshot updates
+        const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+          const messages = snapshot.docs.map((doc) => {
+            const firebaseData = doc.data();
+    
+            // Convert the Timestamp to a Date object
+            const jsDate = new Date(firebaseData.createdAt.seconds * 1000);
+    
+            // Construct a GiftedChat compatible message object
+            const message: IMessage = {
+              _id: doc.id,
+              text: firebaseData.text,
+              createdAt: jsDate,
+              user: {
+                _id: firebaseData.user._id,
+                name: firebaseData.user.name,
+                avatar: firebaseData.user.avatar,
+              },
+            };
+    
+            return message;
+          });
+    
+          // Update the messages state
+          setMessages(messages);
+        });
+    
+        // Unsubscribe from the snapshot listener when the component unmounts
+        return () => unsubscribe();
+      }
+   }, [db]); // Add db as a dependency for useEffect
 
    const onSend = (newMessages: IMessage[]) => {
-      setMessages(previousMessages => GiftedChat.append(previousMessages, newMessages))
-   }
+      if (db && newMessages.length > 0) {
+        const message = newMessages[0];
+        // Convert the date to Firestore timestamp if necessary
+        const firestoreTimestamp = message.createdAt instanceof Date ? 
+          Timestamp.fromDate(message.createdAt) : 
+          message.createdAt;
+    
+        // Prepare the message to be compatible with Firestore
+        const firestoreMessage = {
+          ...message,
+          createdAt: firestoreTimestamp,
+        };
+    
+        // Add the message to the "messages" collection in Firestore
+        addDoc(collection(db as Firestore, "messages"), firestoreMessage)
+          .then(documentReference => {
+            console.log(`Message sent with ID: ${documentReference.id}`);
+          })
+          .catch(error => {
+            console.error("Error sending message: ", error);
+          });
+      } else if (!db) {
+        console.error('Firestore instance not initialized');
+      }
+   };
    
    const renderBubble = (props: BubbleProps<IMessage>) => {
       const username = props.currentMessage?.user?.name;
@@ -96,7 +129,8 @@ const Chat: React.FC<Props> = ({ route }) => {
             renderAvatar={renderAvatar}
             onSend={(messages: IMessage[]) => onSend(messages)}
             user={{
-            _id: 1
+            _id: userID,
+            name: userName
             }}
          />
 

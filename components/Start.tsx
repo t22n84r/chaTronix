@@ -1,11 +1,13 @@
 import React, {useState} from 'react';
-import { StyleSheet, Text, ImageBackground, View, TextInput, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, ImageBackground, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getAuth, signInAnonymously } from "firebase/auth";
 
 // Define your navigator's route names and their params
 export type RootStackParamList = {
-  Start: undefined;
-  Chat: { 
+  Start: {userID: string};
+  Chat: {
+    userID: string;
     bgColor: string;
     userName: string;
   };
@@ -20,9 +22,21 @@ type Props = {
 const Start: React.FC<Props> = ({ navigation }) => {
 
   const [selectedColor, setSelectedColor] = useState('#3D2C8D');
-  const [text, setText] = useState<string>('');
+  const [userName, setuserName] = useState<string>('');
 
   const colorOptions = ['#3D2C8D', '#0C134F', '#183D3D', '#A21232'];
+
+  const auth = getAuth();
+  const signInUser = async () => {
+     try {
+       const result = await signInAnonymously(auth);
+       navigation.navigate('Chat', { userID: result.user.uid, bgColor: selectedColor, userName: userName });
+       Alert.alert("Signed in Successfully!");
+     } catch (error) {
+       console.error(error);
+       Alert.alert("Unable to sign in, try again later.");
+     }
+  };
 
   return (
     <ImageBackground source={require('../assets/33114791_rm251-mind-06-f.jpg')} style={styles.container}>
@@ -31,8 +45,8 @@ const Start: React.FC<Props> = ({ navigation }) => {
 
       <TextInput
         style={styles.input}
-        onChangeText={setText}
-        value={text}
+        onChangeText={setuserName}
+        value={userName}
         placeholder="Enter your name..."
         placeholderTextColor="#fff"
       />
@@ -49,7 +63,7 @@ const Start: React.FC<Props> = ({ navigation }) => {
 
       <TouchableOpacity 
           style={{...styles.buttonStyle, backgroundColor: selectedColor,}} 
-          onPress={() => navigation.navigate('Chat', { bgColor: selectedColor, userName: text })}>
+          onPress={signInUser}>
           <Text style={styles.buttonText}>Go to Chat</Text>
       </TouchableOpacity>
 
