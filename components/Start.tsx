@@ -1,23 +1,18 @@
 import React, {useState} from 'react';
 import { StyleSheet, Text, ImageBackground, View, TextInput, TouchableOpacity, Alert } from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { getAuth, signInAnonymously } from "firebase/auth";
 
 // Define your navigator's route names and their params
 export type RootStackParamList = {
-  Start: {userID: string};
+  Start: undefined;
   Chat: {
     userID: string;
     bgColor: string;
     userName: string;
   };
 };
-
-type StartScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Start'>;
-
-type Props = {
-  navigation: StartScreenNavigationProp;
-};
+type Props = NativeStackScreenProps<RootStackParamList, 'Start'>;
 
 const Start: React.FC<Props> = ({ navigation }) => {
 
