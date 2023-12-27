@@ -1,9 +1,9 @@
-import React, {useState} from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Text, ImageBackground, View, TextInput, TouchableOpacity, Alert } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { getAuth, signInAnonymously } from "firebase/auth";
 
-// Define your navigator's route names and their params
+// Types for navigation parameters
 export type RootStackParamList = {
   Start: undefined;
   Chat: {
@@ -12,32 +12,39 @@ export type RootStackParamList = {
     userName: string;
   };
 };
+
 type Props = NativeStackScreenProps<RootStackParamList, 'Start'>;
 
 const Start: React.FC<Props> = ({ navigation }) => {
-
+  // State for selected color and user name
   const [selectedColor, setSelectedColor] = useState('#3D2C8D');
   const [userName, setuserName] = useState<string>('');
 
+  // Color options for the user to select from
   const colorOptions = ['#3D2C8D', '#0C134F', '#183D3D', '#A21232'];
 
+  // Firebase authentication instance
   const auth = getAuth();
+
+  // Function to handle user sign-in
   const signInUser = async () => {
-     try {
-       const result = await signInAnonymously(auth);
-       navigation.navigate('Chat', { userID: result.user.uid, bgColor: selectedColor, userName: userName });
-       Alert.alert("Signed in Successfully!");
-     } catch (error) {
-       console.error(error);
-       Alert.alert("Unable to sign in, try again later.");
-     }
+    try {
+      const result = await signInAnonymously(auth);
+      navigation.navigate('Chat', { userID: result.user.uid, bgColor: selectedColor, userName: userName });
+      Alert.alert("Signed in Successfully!");
+    } catch (error) {
+      console.error(error);
+      Alert.alert("Unable to sign in, try again later.");
+    }
   };
 
   return (
+    // Background image for the start screen
     <ImageBackground source={require('../assets/33114791_rm251-mind-06-f.jpg')} style={styles.container}>
-
+      
       <Text style={styles.textStyle}>Hello world!</Text>
 
+      {/* Text input for user name */}
       <TextInput
         style={styles.input}
         onChangeText={setuserName}
@@ -46,6 +53,7 @@ const Start: React.FC<Props> = ({ navigation }) => {
         placeholderTextColor="#fff"
       />
 
+      {/* Color selection view */}
       <View style={styles.colorPicker}>
         {colorOptions.map(color => (
           <TouchableOpacity 
@@ -56,16 +64,17 @@ const Start: React.FC<Props> = ({ navigation }) => {
         ))}
       </View>
 
+      {/* Button to proceed to chat screen */}
       <TouchableOpacity 
-          style={{...styles.buttonStyle, backgroundColor: selectedColor,}} 
-          onPress={signInUser}>
-          <Text style={styles.buttonText}>Go to Chat</Text>
+        style={{...styles.buttonStyle, backgroundColor: selectedColor,}} 
+        onPress={signInUser}>
+        <Text style={styles.buttonText}>Go to Chat</Text>
       </TouchableOpacity>
-
     </ImageBackground>
   );
 };
 
+// StyleSheet for styling the component
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -76,7 +85,7 @@ const styles = StyleSheet.create({
     height: '100%'
   },
   textStyle: {
-    color: '#fff'  // This sets the text color to black
+    color: '#fff'
   },
   input: {
     height: 40,

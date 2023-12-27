@@ -1,9 +1,12 @@
+// Import necessary modules and functions from React and Firebase
 import { createContext, FC } from 'react';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import { getReactNativePersistence, initializeAuth } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+// Firebase configuration object containing keys and identifiers for the app
 const firebaseConfig = {
    apiKey: "AIzaSyAfJusTCc8cAf7tqOCmFMrKE8MsNzm1gow",
    authDomain: "chatronix-c1808.firebaseapp.com",
@@ -14,23 +17,29 @@ const firebaseConfig = {
    measurementId: "G-L6WLHXQLSC"
 };
 
-// Initialize Firebase
+// Initialize Firebase with the configuration object
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
-// Initialize Firebase Auth with AsyncStorage for persistence
+// Initialize Firestore and Storage services
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+// Initialize Firebase Authentication with AsyncStorage for persistence
 initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });
 
+// Define the FirestoreContext with both Firestore and Storage services
+export const FirestoreContext = createContext({
+  db: db,
+  storage: storage, // Include the Storage service in the context
+});
 
-// Define the context with a type of Firestore or null
-export const FirestoreContext = createContext<Firestore | null>(null);
-
+// FirestoreProvider component to provide Firestore context to child components
 export const FirestoreProvider: FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
-    <FirestoreContext.Provider value={db}>
-      {children}
+    <FirestoreContext.Provider value={{db, storage}}>
+      {children} {/* Render the child components */}
     </FirestoreContext.Provider>
   );
 };
