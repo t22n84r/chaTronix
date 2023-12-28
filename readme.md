@@ -33,5 +33,6 @@ Before running the application, you need to set up Firebase:
 
 To run the application on your device/emulator, use the following command:
 
-```npm start
+```
+   npm start
 ```
